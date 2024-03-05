@@ -112,8 +112,8 @@ volumes:
   postgres-data:
 
 ```
+<img width="1662" alt="Screenshot 2024-03-03 at 15 19 46" src="https://github.com/tunahanyilmazz/spring-petclinic/assets/10364043/f887c4cc-8015-48d0-9bac-46582bc3b19e">
 
-![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/1c92930a-411e-438a-a56d-4e37cf76158b/a4713548-36d3-4cf3-bceb-0f69c51a4070/Untitled.png)
 
 **to run app we need to write 
 docker-compose up** 
