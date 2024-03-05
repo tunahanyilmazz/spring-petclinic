@@ -165,7 +165,8 @@ kubectl apply -f postgres-deployment.yaml
 kubectl apply -f petclinic-service.yaml
 ```
 
-![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/1c92930a-411e-438a-a56d-4e37cf76158b/e7a74a90-abbd-4ea9-8fe8-e8248ed63304/Untitled.png)
+<img width="1205" alt="Screenshot 2024-03-03 at 15 31 25" src="https://github.com/tunahanyilmazz/spring-petclinic/assets/10364043/5eef0340-877d-4779-9b57-83b4a8d7ec40">
+
 
 If everything okay we should see minikube on docker app if not try to follow docs above. 
 
@@ -277,7 +278,8 @@ spring-petclinic-app                                      latest                
         
 ```
 
-![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/1c92930a-411e-438a-a56d-4e37cf76158b/cadf70e6-58cc-4f9a-ae6a-16dcab8954f8/Untitled.png)
+<img width="1290" alt="Screenshot 2024-03-03 at 15 40 17" src="https://github.com/tunahanyilmazz/spring-petclinic/assets/10364043/e75cda87-5c6b-43fa-b79f-ed89c3c4c488">
+
 
 ```
 kubectl apply -f petclinic-deployment.yaml
@@ -285,7 +287,8 @@ kubectl apply -f postgres-deployment.yaml
 kubectl apply -f petclinic-service.yaml
 ```
 
-![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/1c92930a-411e-438a-a56d-4e37cf76158b/0409f1ab-2843-45ef-9469-9bf0cd49b594/Untitled.png)
+![Screenshot 2024-03-03 at 22 02 47](https://github.com/tunahanyilmazz/spring-petclinic/assets/10364043/e4f1e0a4-b3d3-4610-b667-2f11c0040251)
+
 
 ```
 tuna@Tuna-2 spring-petclinic % minikube service petclinic-service --url
@@ -294,7 +297,8 @@ http://127.0.0.1:62379
 ❗  Because you are using a Docker driver on darwin, the terminal needs to be open to run it.
 ```
 
-![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/1c92930a-411e-438a-a56d-4e37cf76158b/4638458a-edc9-475c-b003-75fbd8b7db5b/Untitled.png)
+![Screenshot 2024-03-03 at 22 02 47](https://github.com/tunahanyilmazz/spring-petclinic/assets/10364043/b1eed18f-d4cd-4343-9724-fc547ec93a30)
+
 
 We can doploy our BE to an instance on AWS. 
 
