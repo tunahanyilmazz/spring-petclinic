@@ -1,3 +1,10 @@
+# Case Study
+
+I use this repo to do my tasks. 
+
+Java: https://github.com/spring-projects/spring-petclinic
+
+```markdown
 # Spring PetClinic Sample Application [![Build Status](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml/badge.svg)](https://github.com/spring-projects/spring-petclinic/actions/workflows/maven-build.yml)
 
 [![Open in Gitpod](https://gitpod.io/button/open-in-gitpod.svg)](https://gitpod.io/#https://github.com/spring-projects/spring-petclinic) [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=7517918)
@@ -19,28 +26,16 @@ java -jar target/*.jar
 
 You can then access the Petclinic at <http://localhost:8080/>.
 
-<img width="1042" alt="petclinic-screenshot" src="https://cloud.githubusercontent.com/assets/838318/19727082/2aee6d6c-9b8e-11e6-81fe-e889a5ddfded.png">
-
-Or you can run it from Maven directly using the Spring Boot Maven plugin. If you do this, it will pick up changes that you make in the project immediately (changes to Java source files require a compile as well - most people use an IDE for this):
-
-```bash
-./mvnw spring-boot:run
 ```
 
-> NOTE: If you prefer to use Gradle, you can build the app using `./gradlew build` and look for the jar file in `build/libs`.
+first i build the project and create a docker-compose file to test it on my local docker enverioment 
 
-## Building a Container
+```jsx
+mvn clean package -DskipTests -Dcheckstyle.skip=true
 
-There is no `Dockerfile` in this project. You can build a container image (if you have a docker daemon) using the Spring Boot build plugin:
-
-```bash
-./mvnw spring-boot:build-image
 ```
 
-## In case you find a bug/suggested improvement for Spring Petclinic
-
-Our issue tracker is available [here](https://github.com/spring-projects/spring-petclinic/issues).
-
+```
 ## Database configuration
 
 In its default configuration, Petclinic uses an in-memory database (H2) which
@@ -49,114 +44,392 @@ and it is possible to inspect the content of the database using the `jdbc:h2:mem
 
 A similar setup is provided for MySQL and PostgreSQL if a persistent database configuration is needed. Note that whenever the database type changes, the app needs to run with a different profile: `spring.profiles.active=mysql` for MySQL or `spring.profiles.active=postgres` for PostgreSQL.
 
-You can start MySQL or PostgreSQL locally with whatever installer works for your OS or use docker:
-
-```bash
-docker run -e MYSQL_USER=petclinic -e MYSQL_PASSWORD=petclinic -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=petclinic -p 3306:3306 mysql:8.2
 ```
 
-or
+I changed the application.properties file 
 
-```bash
-docker run -e POSTGRES_USER=petclinic -e POSTGRES_PASSWORD=petclinic -e POSTGRES_DB=petclinic -p 5432:5432 postgres:16.1
+```
+# Database Configuration
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/petclinic}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:petclinic}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:petclinic}
+
+# JPA for PostgreSQL
+spring.jpa.database-platform=${SPRING_JPA_DATABASE_PLATFORM:org.hibernate.dialect.PostgreSQLDialect}
+
+# Database initialization
+spring.sql.init.mode=always
+spring.sql.init.platform=postgres
+spring.sql.init.schema-locations=classpath*:db/postgres/schema.sql
+spring.sql.init.data-locations=classpath*:db/postgres/data.sql
+
 ```
 
-Further documentation is provided for [MySQL](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources/db/mysql/petclinic_db_setup_mysql.txt)
-and [PostgreSQL](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources/db/postgres/petclinic_db_setup_postgres.txt).
+Dockerfile for app
 
-Instead of vanilla `docker` you can also use the provided `docker-compose.yml` file to start the database containers. Each one has a profile just like the Spring profile:
+```
+FROM openjdk:17
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
 
-```bash
-docker-compose --profile mysql up
 ```
 
-or
+ 
 
-```bash
-docker-compose --profile postgres up
+docker-compose.yaml
+
+```
+version: "3.8"
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/petclinic
+      SPRING_DATASOURCE_USERNAME: petclinic
+      SPRING_DATASOURCE_PASSWORD: petclinic
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_PROFILES_ACTIVE: postgres
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_DB: petclinic
+      POSTGRES_USER: petclinic
+      POSTGRES_PASSWORD: petclinic
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+volumes:
+  postgres-data:
+
 ```
 
-## Test Applications
+![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/1c92930a-411e-438a-a56d-4e37cf76158b/a4713548-36d3-4cf3-bceb-0f69c51a4070/Untitled.png)
 
-At development time we recommend you use the test applications set up as `main()` methods in `PetClinicIntegrationTests` (using the default H2 database and also adding Spring Boot Devtools), `MySqlTestApplication` and `PostgresIntegrationTests`. These are set up so that you can run the apps in your IDE to get fast feedback and also run the same classes as integration tests against the respective database. The MySql integration tests use Testcontainers to start the database in a Docker container, and the Postgres tests use Docker Compose to do the same thing.
+**to run app we need to write 
+docker-compose up** 
 
-## Compiling the CSS
+Here I added some Owners to test data is coming from expected DB. 
 
-There is a `petclinic.css` in `src/main/resources/static/resources/css`. It was generated from the `petclinic.scss` source, combined with the [Bootstrap](https://getbootstrap.com/) library. If you make changes to the `scss`, or upgrade Bootstrap, you will need to re-compile the CSS resources using the Maven profile "css", i.e. `./mvnw package -P css`. There is no build profile for Gradle to compile the CSS.
+```jsx
+tuna@Tuna-2 spring-petclinic % docker ps
+CONTAINER ID   IMAGE                           COMMAND                  CREATED          STATUS          PORTS                    NAMES
+db720fe20ada   spring-petclinic-app            "java -jar /app.jar"     31 minutes ago   Up 31 minutes   0.0.0.0:8080->8080/tcp   spring-petclinic-app-1
+bdbfbfe22002   postgres:latest                 "docker-entrypoint.s…"   31 minutes ago   Up 31 minutes   0.0.0.0:5432->5432/tcp   spring-petclinic-postgres-1
+```
 
-## Working with Petclinic in your IDE
+```jsx
+tuna@Tuna-2 spring-petclinic % docker exec -it bdbfbfe22002 psql -U petclinic -d petclinic -c "SELECT * FROM owners;"
 
-### Prerequisites
+ id | first_name | last_name |        address        |    city     | telephone  
+----+------------+-----------+-----------------------+-------------+------------
+  1 | George     | Franklin  | 110 W. Liberty St.    | Madison     | 6085551023
+  2 | Betty      | Davis     | 638 Cardinal Ave.     | Sun Prairie | 6085551749
+  3 | Eduardo    | Rodriquez | 2693 Commerce St.     | McFarland   | 6085558763
+  4 | Harold     | Davis     | 563 Friendly St.      | Windsor     | 6085553198
+  5 | Peter      | McTavish  | 2387 S. Fair Way      | Madison     | 6085552765
+  6 | Jean       | Coleman   | 105 N. Lake St.       | Monona      | 6085552654
+  7 | Jeff       | Black     | 1450 Oak Blvd.        | Monona      | 6085555387
+  8 | Maria      | Escobito  | 345 Maple St.         | Madison     | 6085557683
+  9 | David      | Schroeder | 2749 Blackhawk Trail  | Madison     | 6085559435
+ 10 | Carlos     | Estaban   | 2335 Independence La. | Waunakee    | 6085555487
+ 11 | 11         | 1111      | 11                    | 111         | 111
+ 12 | 12         | 34        | 56                    | 12          | 123
+ 13 | 1          | 1         | 1                     | 1           | 1
+ 14 | 2          | 2         | 2                     | 2           | 2
+ 15 | 3          | 4         | 5                     | 3           | 3
+(15 rows)
+ 
+```
 
-The following items should be installed in your system:
+# Minikube Env
 
-- Java 17 or newer (full JDK, not a JRE)
-- [Git command line tool](https://help.github.com/articles/set-up-git)
-- Your preferred IDE
-  - Eclipse with the m2e plugin. Note: when m2e is available, there is an m2 icon in `Help -> About` dialog. If m2e is
-  not there, follow the install process [here](https://www.eclipse.org/m2e/)
-  - [Spring Tools Suite](https://spring.io/tools) (STS)
-  - [IntelliJ IDEA](https://www.jetbrains.com/idea/)
-  - [VS Code](https://code.visualstudio.com)
+We can follow link below to install docker and minikube 
+https://minikube.sigs.k8s.io/docs/drivers/docker/
 
-### Steps
+```jsx
+minikube start
+minikube addons enable metrics-server
+minikube dashboard 
+kubectl apply -f petclinic-deployment.yaml
+kubectl apply -f postgres-deployment.yaml
+kubectl apply -f petclinic-service.yaml
+```
 
-1. On the command line run:
+![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/1c92930a-411e-438a-a56d-4e37cf76158b/e7a74a90-abbd-4ea9-8fe8-e8248ed63304/Untitled.png)
 
-    ```bash
-    git clone https://github.com/spring-projects/spring-petclinic.git
-    ```
+If everything okay we should see minikube on docker app if not try to follow docs above. 
 
-1. Inside Eclipse or STS:
+Then i created petclinic-deployment.yaml 
 
-    Open the project via `File -> Import -> Maven -> Existing Maven project`, then select the root directory of the cloned repo.
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: petclinic
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: petclinic
+  template:
+    metadata:
+      labels:
+        app: petclinic
+    spec:
+      containers:
+        - name: petclinic
+          image: tunahanyilmaz/petclinic:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          env:
+            - name: POSTGRES_URL
+              value: "jdbc:postgresql://postgres/petclinic"
+            - name: POSTGRES_USER
+              value: "petclinic"
+            - name: POSTGRES_PASS
+              value: "petclinic"
+            - name: JPA_PLATFORM
+              value: "org.hibernate.dialect.PostgreSQLDialect"
+            - name: DATABASE_PLATFORM
+              value: "postgres"
+            - name: SPRING_PROFILES_ACTIVE # Add this line
+              value: "postgres" # And this line, adjusting if you have a specific profile name
 
-    Then either build on the command line `./mvnw generate-resources` or use the Eclipse launcher (right-click on project and `Run As -> Maven install`) to generate the CSS. Run the application's main method by right-clicking on it and choosing `Run As -> Java Application`.
+```
 
-1. Inside IntelliJ IDEA:
+postgres-deployment.yaml
 
-    In the main menu, choose `File -> Open` and select the Petclinic [pom.xml](pom.xml). Click on the `Open` button.
+```yaml
+# postgres-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:latest
+          env:
+            - name: POSTGRES_DB
+              value: petclinic
+            - name: POSTGRES_USER
+              value: petclinic
+            - name: POSTGRES_PASSWORD
+              value: petclinic
+          ports:
+            - containerPort: 5432
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: postgres
 
-    - CSS files are generated from the Maven build. You can build them on the command line `./mvnw generate-resources` or right-click on the `spring-petclinic` project then `Maven -> Generates sources and Update Folders`.
+```
 
-    - A run configuration named `PetClinicApplication` should have been created for you if you're using a recent Ultimate version. Otherwise, run the application by right-clicking on the `PetClinicApplication` main class and choosing `Run 'PetClinicApplication'`.
+we use image from dockerhub so create a Dockerfile and push it to docker hub 
 
-1. Navigate to the Petclinic
+Dockerfile 
 
-    Visit [http://localhost:8080](http://localhost:8080) in your browser.
+```docker
+FROM openjdk:17
+ARG JAR_FILE=target/*.jar
+COPY ${JAR_FILE} app.jar
+ENTRYPOINT ["java","-jar","/app.jar"]
 
-## Looking for something in particular?
+```
 
-|Spring Boot Configuration | Class or Java property files  |
-|--------------------------|---|
-|The Main Class | [PetClinicApplication](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java) |
-|Properties Files | [application.properties](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/resources) |
-|Caching | [CacheConfiguration](https://github.com/spring-projects/spring-petclinic/blob/main/src/main/java/org/springframework/samples/petclinic/system/CacheConfiguration.java) |
+To check image is pushed to dockerhub 
 
-## Interesting Spring Petclinic branches and forks
+```jsx
+tuna@Tuna-2 spring-petclinic % docker login
+Login with your Docker ID to push and pull images from Docker Hub. If you don't have a Docker ID, head over to https://hub.docker.com to create one.
+Username: tunahanyilmaz
+Password: 
+Login Succeeded
+tuna@Tuna-2 spring-petclinic % docker images
+REPOSITORY                                                TAG                                                                          IMAGE ID       CREATED             SIZE
+spring-petclinic-app                                      latest                                                                       d3c2018e5e4f   59 minutes ago      561MB
+        
+```
 
-The Spring Petclinic "main" branch in the [spring-projects](https://github.com/spring-projects/spring-petclinic)
-GitHub org is the "canonical" implementation based on Spring Boot and Thymeleaf. There are
-[quite a few forks](https://spring-petclinic.github.io/docs/forks.html) in the GitHub org
-[spring-petclinic](https://github.com/spring-petclinic). If you are interested in using a different technology stack to implement the Pet Clinic, please join the community there.
+![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/1c92930a-411e-438a-a56d-4e37cf76158b/cadf70e6-58cc-4f9a-ae6a-16dcab8954f8/Untitled.png)
 
-## Interaction with other open-source projects
+```
+kubectl apply -f petclinic-deployment.yaml
+kubectl apply -f postgres-deployment.yaml
+kubectl apply -f petclinic-service.yaml
+```
 
-One of the best parts about working on the Spring Petclinic application is that we have the opportunity to work in direct contact with many Open Source projects. We found bugs/suggested improvements on various topics such as Spring, Spring Data, Bean Validation and even Eclipse! In many cases, they've been fixed/implemented in just a few days.
-Here is a list of them:
+![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/1c92930a-411e-438a-a56d-4e37cf76158b/0409f1ab-2843-45ef-9469-9bf0cd49b594/Untitled.png)
 
-| Name | Issue |
-|------|-------|
-| Spring JDBC: simplify usage of NamedParameterJdbcTemplate | [SPR-10256](https://jira.springsource.org/browse/SPR-10256) and [SPR-10257](https://jira.springsource.org/browse/SPR-10257) |
-| Bean Validation / Hibernate Validator: simplify Maven dependencies and backward compatibility |[HV-790](https://hibernate.atlassian.net/browse/HV-790) and [HV-792](https://hibernate.atlassian.net/browse/HV-792) |
-| Spring Data: provide more flexibility when working with JPQL queries | [DATAJPA-292](https://jira.springsource.org/browse/DATAJPA-292) |
+```
+tuna@Tuna-2 spring-petclinic % minikube service petclinic-service --url
 
-## Contributing
+http://127.0.0.1:62379
+❗  Because you are using a Docker driver on darwin, the terminal needs to be open to run it.
+```
 
-The [issue tracker](https://github.com/spring-projects/spring-petclinic/issues) is the preferred channel for bug reports, feature requests and submitting pull requests.
+![Untitled](https://prod-files-secure.s3.us-west-2.amazonaws.com/1c92930a-411e-438a-a56d-4e37cf76158b/4638458a-edc9-475c-b003-75fbd8b7db5b/Untitled.png)
 
-For pull requests, editor preferences are available in the [editor config](.editorconfig) for easy use in common text editors. Read more and download plugins at <https://editorconfig.org>. If you have not previously done so, please fill out and submit the [Contributor License Agreement](https://cla.pivotal.io/sign/spring).
+We can doploy our BE to an instance on AWS. 
 
-## License
+CICD yaml 
 
-The Spring PetClinic sample application is released under version 2.0 of the [Apache License](https://www.apache.org/licenses/LICENSE-2.0).
+```
+name: dev-deploy-cicd
+
+on:
+  push:
+    branches: ["dev-deploy"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/dev-deploy:latest
+
+      - name: Download latest image on EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_PUBLIC_IP }}
+          username: ubuntu
+          key: ${{ secrets.EC2_PRIVATE_KEY }}
+          script: |
+            docker pull ${{ secrets.DOCKER_HUB_USERNAME }}/dev-deploy:latest
+            docker stop dev-backend-container || true
+            docker rm dev-backend-container || true
+            docker run -d --name dev-backend-container -p 8080:80 ${{ secrets.DOCKER_HUB_USERNAME }}/dev-deploy:latest
+
+```
+
+we can crete our EC2 with terraform 
+
+We need to export them to don’t store these values on terrafrom file. 
+
+export AWS_ACCESS_KEY_ID="your_access_key"
+export AWS_SECRET_ACCESS_KEY="your_secret_key"
+
+```
+provider "aws" {
+  region = "eu-central-1"
+  access_key = "AWS_ACCESS_KEY_ID"
+  secret_key = "AWS_SECRET_ACCESS_KEY"
+}
+resource "aws_instance" "terraform" {
+  ami           = "ami-04dfd853d88e818e8"
+  instance_type = "t2.micro"
+  key_name      = "aws-eu-central-1-key"
+  tags = {
+    Name = "terraform-ec2-4"
+  }
+
+  security_groups = [aws_security_group.my_instance_security_group1.name]
+  user_data = <<-EOF
+              #!/bin/bash
+              sudo apt-get update
+              sudo apt-get install -y apt-transport-https ca-certificates curl software-properties-common
+              curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+              sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+              sudo apt-get update
+              sudo apt-get install -y docker-ce
+              sudo usermod -aG docker ubuntu
+              sudo systemctl start docker
+              sudo systemctl enable docker
+              EOF
+
+  connection {
+    type        = "ssh"
+    host        = self.public_ip
+    user        = "ubuntu"
+    private_key = file("/Users/tuna/Desktop/pem/aws-eu-central-1-key.pem")
+  }
+}
+
+resource "aws_security_group" "my_instance_security_group1" {
+  name        = "my-instance-security-group1"
+  description = "Security group for my EC2 instance"
+
+  # Ingress rule to allow PostgreSQL connections from the EC2 instance
+  ingress {
+    from_port   = 5432
+    to_port     = 5432
+    protocol    = "tcp"
+    security_groups = [aws_security_group.my_instance_security_group1.id]
+  }
+  
+  # Ingress rules for SSH, HTTP, and HTTPS
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Egress rule to allow all traffic
+  egress {
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
+    cidr_blocks     = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+}
+
+```
